@@ -1,8 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks, HTTPException, UploadFile, File
-from .fine_tuning import run_fine_tuning
-from .predict import WeatherPredictor
-from utils.tools import dotdict
-import os, pickle
+from fastapi import FastAPI
 
 from .upload_model import router as upload_router
 from .download_model import router as download_router
