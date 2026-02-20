@@ -1,7 +1,7 @@
 import torch
 import pandas as pd
 import numpy as np
-from model.iTransformer import Model
+from models.iTransformer import Model
 from utils.timefeatures import time_features
 
 class WeatherPredictor:

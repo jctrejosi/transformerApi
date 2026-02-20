@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi import FastAPI, BackgroundTasks, HTTPException, UploadFile, File
 from .train import run_full_train
 from .fine_tuning import run_fine_tuning
 from .predict import WeatherPredictor
@@ -7,6 +7,8 @@ import os, pickle
 import shutil
 from fastapi.responses import FileResponse
 from pathlib import Path
+import zipfile
+import io
 
 app = FastAPI()
 
@@ -16,6 +18,8 @@ config = dotdict({'seq_len': 96, 'pred_len': 24, 'enc_in': 3, 'd_model': 512, 'n
 MODEL_PATH = "weights/bitcoin_model.pth"
 SCALER_PATH = "weights/scaler.pkl"
 predictor = None
+MODEL_DIR = "saved_models"
+os.makedirs(MODEL_DIR, exist_ok=True)
 
 def reload_predictor():
     global predictor
@@ -26,6 +30,46 @@ def reload_predictor():
 
 @app.on_event("startup")
 async def startup(): reload_predictor()
+
+@app.post("/upload_model")
+async def upload_model_package(file: UploadFile = File(...)):
+    """
+    Recibe un archivo .zip, lo descomprime y guarda el .pth y .pkl 
+    en la carpeta de modelos.
+    """
+    # 1. Validar que sea un archivo ZIP
+    if not file.filename.endswith('.zip'):
+        raise HTTPException(status_code=400, detail="El archivo debe ser un .zip")
+
+    try:
+        # 2. Leer el contenido del archivo subido en memoria
+        contents = await file.read()
+        z = zipfile.ZipFile(io.BytesIO(contents))
+        
+        # 3. Validar contenido interno (opcional pero recomendado)
+        filenames = z.namelist()
+        has_pth = any(f.endswith('.pth') for f in filenames)
+        has_pkl = any(f.endswith('.pkl') for f in filenames)
+        
+        if not (has_pth and has_pkl):
+            raise HTTPException(
+                status_code=400, 
+                detail="El ZIP debe contener al menos un archivo .pth y un .pkl"
+            )
+
+        # 4. Extraer los archivos en la carpeta de destino
+        # Esto sobreescribirá archivos si ya existen con el mismo nombre
+        z.extractall(MODEL_DIR)
+        
+        return {
+            "message": f"Modelo '{file.filename}' cargado y extraído exitosamente",
+            "files_extracted": filenames
+        }
+
+    except zipfile.BadZipFile:
+        raise HTTPException(status_code=400, detail="Archivo ZIP corrupto o inválido")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {str(e)}")
 
 @app.post("/train")
 async def full_train(payload: dict, bg: BackgroundTasks):

@@ -1,7 +1,7 @@
 import torch
 import pickle
 from torch.utils.data import DataLoader
-from model.iTransformer import Model
+from models.iTransformer import Model
 from utils.convertJson import JSONDataset
 
 def run_full_train(data_json, config, model_path, scaler_path):
