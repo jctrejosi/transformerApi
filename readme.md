@@ -7,8 +7,8 @@ Servicio backend para entrenamiento de Transformers
 ## instalación
 
 ```bash
-git clone https://github.com/tu-usuario/tu-repo.git
-cd tu-repo/backend
+git clone https://github.com/jctrejosi/transformerApi.git
+cd transformerApi
 
 # Crea el entorno virtual
 python -m venv venv
@@ -23,7 +23,7 @@ python -m venv venv
 .\venv\Scripts\python.exe -m pip install -r requirements.txt
 
 # Corre el proyecto
-.\venv\Scripts\python.exe -m uvicorn api.main:app --reload
+.\venv\Scripts\python.exe -m uvicorn apis.main:app --reload
 ```
 
 ## APIs Disponibles
