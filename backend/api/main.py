@@ -4,6 +4,9 @@ from .fine_tuning import run_fine_tuning
 from .predict import WeatherPredictor
 from utils.tools import dotdict
 import os, pickle
+import shutil
+from fastapi.responses import FileResponse
+from pathlib import Path
 
 app = FastAPI()
 
@@ -31,7 +34,7 @@ async def full_train(payload: dict, bg: BackgroundTasks):
     
     # 2. Construir rutas personalizadas
     custom_model_path = f"weights/{model_id}.pth"
-    custom_scaler_path = f"weights/scaler_{model_id}.pkl"
+    custom_scaler_path = f"weights/{model_id}.pkl"
 
     def task():
         # Pasamos las rutas dinámicas a la función de entrenamiento
@@ -53,7 +56,7 @@ async def fine_tune(payload: dict, bg: BackgroundTasks):
     # 1. Obtener nombre del modelo y rutas
     model_id = payload.get('model_name', 'default_model')
     target_model = f"weights/{model_id}.pth"
-    target_scaler = f"weights/scaler_{model_id}.pkl"
+    target_scaler = f"weights/{model_id}.pkl"
 
     # 2. VALIDACIÓN: No se puede ajustar algo que no existe
     if not os.path.exists(target_model):
@@ -80,7 +83,7 @@ async def get_prediction(payload: dict):
     try:
         model_id = payload.get('model_name', 'default_model')
         target_model = f"weights/{model_id}.pth"
-        target_scaler = f"weights/scaler_{model_id}.pkl"
+        target_scaler = f"weights/{model_id}.pkl"
 
         if not os.path.exists(target_model) or not os.path.exists(target_scaler):
             raise HTTPException(
@@ -116,3 +119,56 @@ async def get_prediction(payload: dict):
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+@app.post("/download_model")
+async def download_model_package(payload: dict, background_tasks: BackgroundTasks):
+    """
+    Recibe {"model_name": "nombre"} y devuelve un ZIP con el .pth y el .pkl
+    """
+    model_name = payload.get("model_name")
+    if not model_name:
+        raise HTTPException(status_code=400, detail="Falta 'model_name' en el payload")
+
+    model_path = Path(f"weights/{model_name}.pth")
+    scaler_path = Path(f"weights/{model_name}.pkl")
+    
+    # Carpeta temporal para el empaquetado
+    export_path = Path(f"exports/{model_name}")
+    zip_full_path = Path(f"exports/{model_name}_pack") # shutil añade el .zip automáticamente
+
+    # 1. Validar existencia de la pareja
+    if not model_path.exists() or not scaler_path.exists():
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No se encontró la pareja (.pth y .pkl) para el modelo: {model_name}"
+        )
+
+    try:
+        # 2. Crear estructura temporal
+        os.makedirs("exports", exist_ok=True)
+        if export_path.exists(): shutil.rmtree(export_path)
+        export_path.mkdir()
+
+        # 3. Copiar archivos al área de exportación
+        shutil.copy2(model_path, export_path / f"{model_name}.pth")
+        shutil.copy2(scaler_path, export_path / f"{model_name}.pkl")
+
+        # 4. Crear el ZIP
+        # make_archive(nombre_archivo, formato, directorio_a_comprimir)
+        shutil.make_archive(str(zip_full_path), 'zip', export_path)
+
+        # 5. Limpiar carpeta temporal (ya no la necesitamos, tenemos el zip)
+        shutil.rmtree(export_path)
+
+        # 6. Tarea en segundo plano para borrar el ZIP después de enviarlo (limpieza)
+        final_zip = Path(f"{zip_full_path}.zip")
+        background_tasks.add_task(os.remove, final_zip)
+
+        return FileResponse(
+            path=final_zip,
+            filename=f"{model_name}_complete.zip",
+            media_type='application/zip'
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al generar paquete: {str(e)}")
