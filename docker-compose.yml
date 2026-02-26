@@ -1,0 +1,9 @@
+services:
+  transformerapi:
+    build: .
+    container_name: transformerapi
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    ports:
+      - "8000:8000"

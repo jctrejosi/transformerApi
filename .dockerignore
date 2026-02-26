@@ -1,0 +1,13 @@
+# ignorar entornos virtuales, caches y datos pesados
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+*.csv
+*.h5
+*.pt
+.data/
+node_modules/

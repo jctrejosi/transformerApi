@@ -5,6 +5,9 @@ from .download_model import router as download_router
 from .train import router as train_router
 from .predict import router as predict_router
 from .fine_tuning import router as fine_tuning_router
+from .delete_all import router as delete_all
+from .delete_model import router as delete_model
+from .list_models import router as list_models
 
 app = FastAPI()
 
@@ -13,3 +16,7 @@ app.include_router(download_router)
 app.include_router(train_router)
 app.include_router(predict_router)
 app.include_router(fine_tuning_router)
+app.include_router(delete_all)
+app.include_router(delete_model)
+app.include_router(list_models)
+
