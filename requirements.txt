@@ -28,7 +28,7 @@ networkx==3.6.1
 numpy==2.4.2
 packaging==26.0
 pandas==3.0.1
-pillow==12.1.1
+pillow==12.2.0
 pip-tools==7.5.3
 product_key_memory==0.3.0
 pydantic==2.12.5
