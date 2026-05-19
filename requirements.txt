@@ -16,7 +16,7 @@ fsspec==2026.2.0
 h11==0.16.0
 httptools==0.7.1
 hyper-connections==0.4.9
-idna==3.11
+idna==3.15
 Jinja2==3.1.6
 joblib==1.5.3
 kiwisolver==1.4.9
