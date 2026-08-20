@@ -31,3 +31,8 @@ app.include_router(fine_tuning_router)
 app.include_router(delete_all)
 app.include_router(delete_model)
 app.include_router(list_models)
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}

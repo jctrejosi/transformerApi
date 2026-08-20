@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: transformer-api
+    runtime: docker
+    # torch es pesado: "starter" da algo más de margen que "free".
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      # Secreto usado por DELETE /clear_all_models.
+      - key: CLEANUP_API_KEY
+        sync: false
